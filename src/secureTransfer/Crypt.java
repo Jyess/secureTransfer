@@ -31,9 +31,9 @@ public class Crypt {
 	public static final String DES = "DES";
 	public static final String RSA = "RSA";
 	
-	public Crypt() {
-		generateKey();
-		generateKeyPair();
+	public Crypt(String role) {
+		if (role.equals("CLIENT")) generateKey();
+		if (role.equals("SERVER")) generateKeyPair();
 	}
 	
 	private void generateKey() {		
@@ -125,19 +125,18 @@ public class Crypt {
 		this.privateKey = privateKey;
 	}
 	
-	public static void main(String[] args) {
-		
-		System.out.println("A coder : ");
-		Scanner sc = new Scanner(System.in);
-		String input = sc.nextLine();
-		sc.close();
-		
-		Crypt c = new Crypt();
-		
-		byte[] res = c.encode(Crypt.DES, input, c.getKey());
-		System.out.println("Encodé : " + c.bytesToHexa(res));
-		
-		String res2 = c.decode(Crypt.DES, res, c.getKey());
-		System.out.println("Décodé : " + res2);
+	public static void main(String[] args) {		
+//		System.out.println("A coder : ");
+//		Scanner sc = new Scanner(System.in);
+//		String input = sc.nextLine();
+//		sc.close();
+//		
+//		Crypt c = new Crypt();
+//		
+//		byte[] res = c.encode(Crypt.DES, input, c.getKey());
+//		System.out.println("Encodé : " + c.bytesToHexa(res));
+//		
+//		String res2 = c.decode(Crypt.DES, res, c.getKey());
+//		System.out.println("Décodé : " + res2);
 	}
 }

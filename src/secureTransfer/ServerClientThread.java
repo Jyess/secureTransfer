@@ -3,6 +3,8 @@ package secureTransfer;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 public class ServerClientThread extends Thread {
 	private Socket socketClient;
@@ -15,6 +17,17 @@ public class ServerClientThread extends Thread {
     	try {                
             String pathServer = System.getProperty("user.dir") + File.separator;
             String pathToFiles = pathServer + "files" + File.separator;
+            String pathToKeys = pathServer + "Keys" + File.separator;
+            		
+    		Crypt c = new Crypt("SERVER"); //génère la paire de clés
+			
+    		PublicKey publicKey = c.getPublicKey();
+			PrivateKey privateKey = c.getPrivateKey();
+			
+			File publicKeyFile = new File(pathToKeys + "public_key.txt");
+			File privateKeyFile = new File(pathToKeys + "private_key.txt");
+			IOSocket.writeFile(publicKeyFile, publicKey); //doit donner un string
+			IOSocket.writeFile(privateKeyFile, privateKey); //doit donner un string
 
             String request = IOSocket.readSocket(this.socketClient); //2
             

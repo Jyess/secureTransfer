@@ -9,6 +9,8 @@ public class Client {
 		while (true) {
 			try {
 				Socket socketClient = new Socket("localhost", 1234);
+			
+				//recoit la clé publique
 				
 				String pathClient = System.getProperty("user.dir") + File.separator;
 				String pathToFiles = pathClient + "files" + File.separator;
@@ -92,5 +94,9 @@ public class Client {
 				System.exit(0);
 			}
 		}
+	}
+
+	private static void askPublicKey(Socket socketClient) {
+		IOSocket.writeSocket(socketClient, "publicKey");
 	}
 }
