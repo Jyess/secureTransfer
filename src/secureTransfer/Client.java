@@ -7,9 +7,13 @@ import java.security.Key;
 
 public class Client {
 	public static void main(String[] args) {
+
+		final Crypt c = new Crypt("CLIENT");
+
 		while (true) {
 			try {
-				final Crypt c = new Crypt("CLIENT");
+				Socket socketClient = new Socket("localhost", 1234);
+
 				String commande = "", filename = "";
 				String pathClient = System.getProperty("user.dir") + File.separator;
 				String pathToFiles = pathClient + "files" + File.separator;
@@ -18,18 +22,14 @@ public class Client {
 				if (!dossierFiles.exists())
 					dossierFiles.mkdir();
 
-				Socket socketClient = new Socket("localhost", 1234);
-
 				// recoit la clé publique
 				byte[] publicKey = IOSocket.readByteSocket(socketClient);
-				Key publicKeyFromServer = IOSocket.getPublicKey(publicKey);
+				Key publicKeyFromServer = c.getPublicKey(publicKey);
 
 				// encode la clé secrète et l'envoie
 				Key secretKey = c.getKey();
 				byte[] encodedSecretKey = c.encode(Crypt.RSA, secretKey.getEncoded(), publicKeyFromServer);
-				IOSocket.writeSocket(socketClient, encodedSecretKey);
-
-				System.out.println("La clé secrète envoyée est : " + secretKey.getEncoded());
+				IOSocket.writeSocket(socketClient, encodedSecretKey); // envoie la clé secrète
 
 				String request = IOSocket.readInput(); // attend qu'on écrive la requete
 				String[] splitRequest = request.split(" "); // split la requete
@@ -45,7 +45,8 @@ public class Client {
 				switch (commande) {
 					case "GET":
 						if (!filename.isEmpty()) {
-							IOSocket.writeSocket(socketClient, request); // 1
+							byte[] encodedRequest = c.encode(Crypt.DES, request.getBytes(), secretKey);
+							IOSocket.writeSocket(socketClient, encodedRequest); // 1
 							String response = IOSocket.readSocket(socketClient); // 4
 
 							// TODO à décrypter
@@ -93,6 +94,8 @@ public class Client {
 						break;
 
 					default:
+						byte[] error = c.encode(Crypt.DES, new String("ERROR").getBytes(), secretKey);
+						IOSocket.writeSocket(socketClient, error);
 						System.out.println("Commande non valide");
 						break;
 				}

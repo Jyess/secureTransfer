@@ -2,11 +2,15 @@ package securetransfer;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -24,6 +28,8 @@ public class Crypt {
 	private PublicKey publicKey;
 	private PrivateKey privateKey;
 
+	private Key secretKey;
+
 	public static final String DES = "DES";
 	public static final String RSA = "RSA";
 
@@ -35,8 +41,11 @@ public class Crypt {
 	public Crypt(String role) {
 		if (role.equals("CLIENT"))
 			generateKey();
+
 		if (role.equals("SERVER"))
 			generateKeyPair();
+
+		this.secretKey = null;
 	}
 
 	/**
@@ -109,7 +118,6 @@ public class Crypt {
 		try {
 			Cipher c = Cipher.getInstance(method);
 			c.init(Cipher.DECRYPT_MODE, key);
-			System.out.println(input.length);
 			decodedMessage = c.doFinal(input);
 		} catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchAlgorithmException
 				| NoSuchPaddingException e) {
@@ -187,6 +195,38 @@ public class Crypt {
 	 */
 	public void setPrivateKey(PrivateKey privateKey) {
 		this.privateKey = privateKey;
+	}
+
+	public Key getSecretKey() {
+		return this.secretKey;
+	}
+
+	public void setSecretKey(Key secretKey) {
+		this.secretKey = secretKey;
+	}
+
+	public Key getPublicKey(byte[] publicKeyByte) {
+		Key publicKey = null;
+
+		try {
+			publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyByte));
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+
+		return publicKey;
+	}
+
+	public Key getPrivateKey(byte[] privateKeyByte) {
+		Key privateKey = null;
+
+		try {
+			privateKey = KeyFactory.getInstance("RSA").generatePublic(new PKCS8EncodedKeySpec(privateKeyByte));
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+
+		return privateKey;
 	}
 
 	public static void main(String[] args) {
