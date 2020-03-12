@@ -1,4 +1,4 @@
-package secureTransfer;
+package securetransfer;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,66 +7,71 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 
 public class ServerClientThread extends Thread {
-	private Socket socketClient;
+    private Socket socketClient;
 
     public ServerClientThread(Socket socketClient) {
         this.socketClient = socketClient;
     }
-    
-    public void run() {
-    	try {                
-            String pathServer = System.getProperty("user.dir") + File.separator;
-            String pathToFiles = pathServer + "files" + File.separator;
-            String pathToKeys = pathServer + "Keys" + File.separator;
-            		
-    		Crypt c = new Crypt("SERVER"); //génère la paire de clés
-			
-    		PublicKey publicKey = c.getPublicKey();
-			PrivateKey privateKey = c.getPrivateKey();
-			
-			File publicKeyFile = new File(pathToKeys + "public_key.txt");
-			File privateKeyFile = new File(pathToKeys + "private_key.txt");
-			IOSocket.writeFile(publicKeyFile, publicKey); //doit donner un string
-			IOSocket.writeFile(privateKeyFile, privateKey); //doit donner un string
 
-            String request = IOSocket.readSocket(this.socketClient); //2
-            
-            String commande = "";
-            String filename = "";
+    public void run() {
+        try {
+            final Crypt c = new Crypt("SERVER"); // génère la paire de clés
+
+            final String pathServer = System.getProperty("user.dir") + File.separator;
+            final String pathToFiles = pathServer + "files" + File.separator;
+            final String pathToKeys = pathServer + "Keys" + File.separator;
+
+            PublicKey publicKey = c.getPublicKey();
+            PrivateKey privateKey = c.getPrivateKey();
+            storeKeys(pathToKeys, publicKey, privateKey);
+
+            // envoie la clé publique
+            IOSocket.writeSocket(this.socketClient, publicKey.getEncoded());
+
+            // récupère la clé secrète du client et la décode
+            byte[] encodedSecretKeyFromClient = IOSocket.readByteSocket(this.socketClient);
+            System.out.println(c.bytesToHexa(encodedSecretKeyFromClient));
+            byte[] secretKeyClient = c.decode(Crypt.RSA, encodedSecretKeyFromClient, privateKey);
+            System.out.println("La clé secrète du client est : " + secretKeyClient);
+
+            // récupère la requete du client
+            String request = IOSocket.readSocket(this.socketClient);
+
+            String commande = "", filename = "";
             if (request != null) {
                 System.out.println("Requête client -> " + request + "\r\n");
-        
+
                 String[] splitRequest = request.split(" ");
 
                 if (splitRequest.length >= 1) {
                     commande = splitRequest[0];
                 }
-                
+
                 if (splitRequest.length == 2) {
                     filename = splitRequest[1];
                 }
             }
-            
+
             switch (commande) {
                 case "GET":
                     File fileServer = new File(pathToFiles + filename);
-                    
+
                     if (fileServer.exists()) {
                         String fileContent = IOSocket.readFile(fileServer);
-                        //à crypter
-                        IOSocket.writeSocket(this.socketClient, fileContent); //3
+                        // TODO à crypter
+                        IOSocket.writeSocket(this.socketClient, fileContent); // 3
                     } else {
-                        IOSocket.writeSocket(this.socketClient, "error"); //3
+                        IOSocket.writeSocket(this.socketClient, "error"); // 3
                     }
 
                     break;
                 case "PUT":
                     String fileContent = IOSocket.readSocket(socketClient);
-                    //à décrypter
-                    
+                    // TODO à décrypter
+
                     File fileClient = new File(pathToFiles + filename);
                     fileClient.createNewFile();
-                    
+
                     System.out.println(fileContent);
                     IOSocket.writeFile(fileClient, fileContent);
                     break;
@@ -78,13 +83,31 @@ public class ServerClientThread extends Thread {
                     IOSocket.writeSocket(socketClient, "command not valid");
                     break;
             }
-            
-            //ferme
+
+            // ferme
             this.socketClient.close();
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
             System.exit(0);
+        }
+    }
+
+    /**
+     * Enregistre la paire de clés dans des fichiers
+     * 
+     * @param pathToKeys chemin vers le repertoire des clés
+     * @param publicKey  clé publique
+     * @param privateKey clé privée
+     */
+    private void storeKeys(final String pathToKeys, PublicKey publicKey, PrivateKey privateKey) {
+        boolean keysFolderCreated = new File(pathToKeys).mkdir();
+
+        if (keysFolderCreated) {
+            File publicKeyFile = new File(pathToKeys + "public_key");
+            File privateKeyFile = new File(pathToKeys + "private_key");
+            IOSocket.writeFile(publicKeyFile, publicKey.getEncoded());
+            IOSocket.writeFile(privateKeyFile, privateKey.getEncoded());
         }
     }
 }

@@ -1,13 +1,21 @@
-package secureTransfer;
+package securetransfer;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 
 public class IOSocket {
 	/**
@@ -29,8 +37,8 @@ public class IOSocket {
 	/**
 	 * Retourne ce qui a été écrit dans un socket.
 	 * 
-	 * @param s 		un socket.
-	 * @return String 	une chaîne de caractères.
+	 * @param s un socket.
+	 * @return String une chaîne de caractères.
 	 */
 	static String readSocket(Socket s) {
 		try {
@@ -45,30 +53,65 @@ public class IOSocket {
 	}
 
 	/**
+	 * Retourne ce qui a été écrit dans un socket.
+	 * 
+	 * @param s un socket.
+	 * @return une chaîne d'octets.
+	 */
+	static byte[] readByteSocket(Socket s) {
+		byte[] buffer = new byte[0];
+
+		try {
+			DataInputStream in = new DataInputStream(s.getInputStream());
+			buffer = new byte[1024];
+			in.read(buffer, 0, buffer.length);
+			s.shutdownInput();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return buffer;
+	}
+
+	/**
 	 * Ecrit une chaîne de caractères dans un socket.
 	 * 
 	 * @param s   un socket.
 	 * @param msg la chaîne de caractères à écrire.
 	 */
 	static void writeSocket(Socket s, String msg) {
-		try {
-			PrintWriter pr = new PrintWriter(s.getOutputStream()); // pour écrire dans l'output
+		try (PrintWriter pr = new PrintWriter(s.getOutputStream())) {
 			pr.println(msg);
-			pr.flush();
-			// pr.close();
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 		}
 	}
 
 	/**
+	 * Ecrit une chaîne d'octets dans un socket.
+	 * 
+	 * @param s   un socket.
+	 * @param msg la chaîne d'octets à écrire.
+	 */
+	static void writeSocket(Socket s, byte[] msg) {
+		try {
+			DataOutputStream out = new DataOutputStream(s.getOutputStream());
+			out.write(msg);
+			s.shutdownOutput();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Retourne le contenu d'un fichier.
-	 * @param filePath 	le chemin d'un fichier
-	 * @return String 	le contenu d'un fichier
+	 * 
+	 * @param filePath le chemin d'un fichier
+	 * @return String le contenu d'un fichier
 	 */
 	static String readFile(File filePath) {
 		BufferedReader reader;
-		String ligne, fileContent = "";
+		String ligne = "", fileContent = "";
 
 		try {
 			reader = new BufferedReader(new FileReader(filePath));
@@ -79,25 +122,56 @@ public class IOSocket {
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-		} 
+		}
 
 		return fileContent;
 	}
 
 	/**
 	 * Ecrit dans un fichier le contenu souhaité.
-	 * @param filePath 		le chemin du fichier à écrire
-	 * @param fileContent 	le contenu du fichier
+	 * 
+	 * @param filePath    le chemin du fichier à écrire
+	 * @param fileContent le contenu du fichier
 	 */
 	static void writeFile(File file, String fileContent) {
-		try {
-			PrintWriter writeInFile = new PrintWriter(new FileWriter(file));
+		try (PrintWriter writeInFile = new PrintWriter(new FileWriter(file))) {
 			writeInFile.println(fileContent);
-			writeInFile.flush();
-			// writeInFile.close();
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
 	}
+
+	/**
+	 * Ecrit dans un fichier le contenu souhaité.
+	 * 
+	 * @param filePath    le chemin du fichier à écrire
+	 * @param fileContent le contenu du fichier
+	 */
+	static void writeFile(File file, byte[] fileContent) {
+		try (FileOutputStream out = new FileOutputStream(file)) {
+			out.write(fileContent);
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	static Key getPublicKey(byte[] publicKeyByte) {
+		Key publicKey = null;
+
+		try {
+			publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publicKeyByte));
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+
+		return publicKey;
+	}
 }
+
+// PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new
+// PKCS8EncodedKeySpec(privateKeyBytes));
+
+// PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new
+// X509EncodedKeySpec(bytes));
