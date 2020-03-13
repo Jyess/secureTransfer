@@ -80,6 +80,8 @@ public class Client {
 
 								System.out.println("Le fichier a bien été envoyé au serveur.");
 							} else {
+								byte[] encodedError = c.encode(Crypt.DES, new String("error").getBytes(), secretKey);
+								IOSocket.writeSocket(socketClient, encodedError);
 								System.out.println(
 										"Le fichier n'existe pas. Vérifiez qu'il existe bien dans le dossier 'files'.");
 							}

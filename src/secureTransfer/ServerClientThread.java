@@ -69,12 +69,16 @@ public class ServerClientThread extends Thread {
                     break;
                 case "PUT":
                     byte[] encodedFileContent = IOSocket.readByteSocket(socketClient);
-                    byte[] fileContent = c.decode(Crypt.DES, encodedFileContent, secretKey);
+                    byte[] decodedFileContent = c.decode(Crypt.DES, encodedFileContent, secretKey);
+                    String fileContent = new String(decodedFileContent);
 
-                    File fileClient = new File(pathToFiles + filename);
-                    fileClient.createNewFile();
+                    if (!fileContent.equals("error")) {
+                        File fileClient = new File(pathToFiles + filename);
+                        fileClient.createNewFile();
 
-                    IOSocket.writeFile(fileClient, fileContent);
+                        IOSocket.writeFile(fileClient, fileContent);
+                    }
+
                     break;
                 case "QUIT":
                     this.socketClient.close();
