@@ -17,11 +17,11 @@ public class ServerClientThread extends Thread {
 
     public void run() {
         try {
-            final String pathServer = System.getProperty("user.dir") + File.separator;
-            final String pathToFiles = pathServer + "files" + File.separator;
-            // final String pathToKeys = pathServer + "Keys" + File.separator;
+            String pathServer = System.getProperty("user.dir") + File.separator;
+            String pathToFiles = pathServer + "files" + File.separator;
+            // String pathToKeys = pathServer + "Keys" + File.separator;
 
-            final Crypt c = new Crypt("SERVER"); // génère la paire de clés
+            Crypt c = new Crypt("SERVER"); // génère la paire de clés
 
             PublicKey publicKey = c.getPublicKey();
             PrivateKey privateKey = c.getPrivateKey();
@@ -39,7 +39,7 @@ public class ServerClientThread extends Thread {
             String request = new String(decodedRequest);
 
             String commande = "", filename = "";
-            if (!request.equals("ERROR")) {
+            if (!request.equals("error")) {
                 System.out.println("Requête client -> " + request + "\r\n");
 
                 String[] splitRequest = request.split(" ");
@@ -59,21 +59,21 @@ public class ServerClientThread extends Thread {
 
                     if (fileServer.exists()) {
                         String fileContent = IOSocket.readFile(fileServer);
-                        // TODO à crypter
-                        IOSocket.writeSocket(this.socketClient, fileContent); // 3
+                        byte[] encodedFileContent = c.encode(Crypt.DES, fileContent.getBytes(), secretKey);
+
+                        IOSocket.writeSocket(this.socketClient, encodedFileContent); // 3
                     } else {
                         IOSocket.writeSocket(this.socketClient, "error"); // 3
                     }
 
                     break;
                 case "PUT":
-                    String fileContent = IOSocket.readSocket(socketClient);
-                    // TODO à décrypter
+                    byte[] encodedFileContent = IOSocket.readByteSocket(socketClient);
+                    byte[] fileContent = c.decode(Crypt.DES, encodedFileContent, secretKey);
 
                     File fileClient = new File(pathToFiles + filename);
                     fileClient.createNewFile();
 
-                    System.out.println(fileContent);
                     IOSocket.writeFile(fileClient, fileContent);
                     break;
                 case "QUIT":
@@ -81,7 +81,7 @@ public class ServerClientThread extends Thread {
                     System.out.println("---Le client s'est déconnecté---");
                     break;
                 default:
-                    // IOSocket.writeSocket(socketClient, "command not valid");
+                    System.out.println("Wrong request");
                     break;
             }
 

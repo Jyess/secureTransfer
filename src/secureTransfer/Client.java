@@ -8,7 +8,7 @@ import java.security.Key;
 public class Client {
 	public static void main(String[] args) {
 
-		final Crypt c = new Crypt("CLIENT");
+		Crypt c = new Crypt("CLIENT");
 
 		while (true) {
 			try {
@@ -42,14 +42,16 @@ public class Client {
 					filename = splitRequest[1];
 				}
 
+				byte[] encodedRequest = c.encode(Crypt.DES, request.getBytes(), secretKey);
+
 				switch (commande) {
 					case "GET":
 						if (!filename.isEmpty()) {
-							byte[] encodedRequest = c.encode(Crypt.DES, request.getBytes(), secretKey);
 							IOSocket.writeSocket(socketClient, encodedRequest); // 1
-							String response = IOSocket.readSocket(socketClient); // 4
+							byte[] encodedResponse = IOSocket.readByteSocket(socketClient); // 4
 
-							// TODO à décrypter
+							byte[] decodedReponse = c.decode(Crypt.DES, encodedResponse, secretKey);
+							String response = new String(decodedReponse);
 
 							if (!response.equals("error")) {
 								File fileClient = new File(pathToFiles + filename); // ./files/abc.txt
@@ -66,15 +68,15 @@ public class Client {
 						break;
 
 					case "PUT":
-						IOSocket.writeSocket(socketClient, request);
+						IOSocket.writeSocket(socketClient, encodedRequest);
 
 						if (!filename.isEmpty()) {
 							File fileClient = new File(dossierFiles + File.separator + filename);
 
 							if (fileClient.exists()) {
 								String fileContent = IOSocket.readFile(fileClient);
-								// TODO à encrypter
-								IOSocket.writeSocket(socketClient, fileContent);
+								byte[] encodedFileContent = c.encode(Crypt.DES, fileContent.getBytes(), secretKey);
+								IOSocket.writeSocket(socketClient, encodedFileContent);
 
 								System.out.println("Le fichier a bien été envoyé au serveur.");
 							} else {
@@ -88,13 +90,13 @@ public class Client {
 						break;
 
 					case "QUIT":
-						IOSocket.writeSocket(socketClient, request);
+						IOSocket.writeSocket(socketClient, encodedRequest); // 1
 						socketClient.close();
 						System.exit(0);
 						break;
 
 					default:
-						byte[] error = c.encode(Crypt.DES, new String("ERROR").getBytes(), secretKey);
+						byte[] error = c.encode(Crypt.DES, new String("error").getBytes(), secretKey);
 						IOSocket.writeSocket(socketClient, error);
 						System.out.println("Commande non valide");
 						break;

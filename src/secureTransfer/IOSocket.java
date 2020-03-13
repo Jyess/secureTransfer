@@ -76,9 +76,9 @@ public class IOSocket {
 	 * @param msg la chaîne de caractères à écrire.
 	 */
 	static void writeSocket(Socket s, String msg) {
-		try (PrintWriter pr = new PrintWriter(s.getOutputStream())) {
+		try {
+			PrintWriter pr = new PrintWriter(s.getOutputStream());
 			pr.println(msg);
-			pr.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -95,7 +95,6 @@ public class IOSocket {
 			DataOutputStream out = new DataOutputStream(s.getOutputStream());
 			out.writeInt(msg.length);
 			out.write(msg);
-			out.flush();
 			// s.shutdownOutput();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -132,8 +131,10 @@ public class IOSocket {
 	 * @param fileContent le contenu du fichier
 	 */
 	static void writeFile(File file, String fileContent) {
-		try (PrintWriter writeInFile = new PrintWriter(new FileWriter(file))) {
+		try {
+			PrintWriter writeInFile = new PrintWriter(new FileWriter(file));
 			writeInFile.println(fileContent);
+			writeInFile.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -146,16 +147,12 @@ public class IOSocket {
 	 * @param fileContent le contenu du fichier
 	 */
 	static void writeFile(File file, byte[] fileContent) {
-		try (FileOutputStream out = new FileOutputStream(file)) {
+		try {
+			FileOutputStream out = new FileOutputStream(file);
 			out.write(fileContent);
+			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 }
-
-// PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new
-// PKCS8EncodedKeySpec(privateKeyBytes));
-
-// PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new
-// X509EncodedKeySpec(bytes));
