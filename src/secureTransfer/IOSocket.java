@@ -116,6 +116,10 @@ public class IOSocket {
 			while ((ligne = reader.readLine()) != null) {
 				fileContent += (ligne + "\r\n");
 			}
+
+			int lastIndex = fileContent.lastIndexOf("\r\n");
+			fileContent = fileContent.substring(0, lastIndex);
+
 			reader.close();
 		} catch (IOException e) {
 			e.printStackTrace();
